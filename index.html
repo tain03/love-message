@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+ <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Optimized Love Animation</title>
@@ -23,18 +23,15 @@
          /* Stage keeps a fixed landscape aspect (letterboxed on phones) */
          #stage {
              position: fixed;
-             top: 50%;
-             left: 50%;
-             transform: translate(-50%, -50%);
-             width: min(100vw, calc(100vh * (16 / 9)));
-             height: min(100vh, calc(100vw * (9 / 16)));
-             aspect-ratio: 16 / 9;
+             inset: 0;
+             width: 100vw;
+             height: 100svh;
              overflow: hidden;
          }
 
-         /* Galaxy Background inside stage */
+         /* Galaxy Background fills full screen (behind stage) */
          .galaxy-bg {
-             position: absolute;
+             position: fixed;
              inset: 0;
              width: 100%;
              height: 100%;
@@ -127,6 +124,7 @@
              width: 100%;
              height: 100%;
              z-index: 1;
+             transform-origin: 50% 50%;
          }
 
         .love {
@@ -137,7 +135,7 @@
             pointer-events: none;
         }
 
-        .love_word {
+         .love_word {
             color: #ea80b0;
             font-size: 1.4rem;
             transform: translateY(-100%) rotateZ(-30deg);
@@ -145,6 +143,9 @@
             letter-spacing: 2px;
             white-space: nowrap;
         }
+
+         /* Wrapper to scale entire heart trajectory/text */
+         .heart-wrapper { transform: scale(var(--heart-scale, 1)); transform-origin: 50% 50%; }
 
         .love_word.special {
             color: #fff;
@@ -313,6 +314,10 @@
         .next-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.35); }
         .next-btn:active { transform: translateY(0); }
 
+        /* Arrange toggle at top-right, next below it */
+        #music-toggle { top: 20px; right: 20px; }
+        #next-track { top: 72px; right: 20px; }
+
         /* Orientation overlay for mobile portrait */
         #orientation-overlay {
             position: fixed;
@@ -361,17 +366,19 @@
                 letter-spacing: 1px;
                 text-shadow: 0 0 6px rgba(255,255,255,0.7);
             }
-            .next-btn { top: 12px; right: 12px; padding: 10px 12px; }
+            #music-toggle { top: 12px; right: 12px; }
+            #next-track { top: 64px; right: 12px; }
+            .next-btn { padding: 10px 12px; }
             .stats { font-size: 11px; padding: 6px 8px; }
         }
 
         /* Precise tuning for iPhone 11 portrait (414x896 @2x) */
         @media screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) {
             #stage {
-                /* Use a wider landscape aspect to maximize vertical space on 19.5:9 screen */
-                width: min(100vw, calc(100vh * (19.5 / 9)));
-                height: min(100vh, calc(100vw * (9 / 19.5)));
-                aspect-ratio: 19.5 / 9;
+                inset: 0;
+                width: 100vw;
+                height: 100svh;
+                aspect-ratio: auto;
             }
             .love_word { font-size: clamp(13px, 3.8vw, 18px); }
             .next-btn {
@@ -384,10 +391,11 @@
             }
         }
     </style>
-</head>
+ </head> 
 <body>
-    <!-- Minimal next music button -->
+    <!-- Minimal music controls -->
     <button class="next-btn" id="next-track">≫</button>
+    <button class="next-btn" id="music-toggle">▶</button>
 
     <!-- Orientation overlay (mobile portrait) -->
     <div id="orientation-overlay" aria-live="assertive" aria-atomic="true" role="dialog">
@@ -395,25 +403,18 @@
             <h2>Vui lòng xoay ngang thiết bị</h2>
             <p>Trải nghiệm trang web đẹp nhất ở chế độ xoay ngang. Hãy xoay thiết bị của bạn sang chiều ngang.</p>
             <div class="hint">Mẹo: Nếu không tự ẩn, hãy tắt khóa xoay màn hình của thiết bị.</div>
-        </div>
+      </div> 
+     </div> 
+
+    <!-- Galaxy Background (full screen) -->
+    <div class="galaxy-bg">
+        <div class="nebula"></div>
+        <div class="stars" id="stars-container"></div>
     </div>
 
+    <!-- Stage with fixed landscape area for heart effect only -->
     <div id="stage">
-        <!-- Stats -->
-        <div class="stats">
-            <div>Elements: <span id="element-count">0</span></div>
-            <div>FPS: <span id="fps">60</span></div>
-            <div>Memory: <span id="memory">0</span> MB</div>
-        </div>
-
-        <!-- Galaxy Background -->
-        <div class="galaxy-bg">
-            <div class="nebula"></div>
-            <div class="stars" id="stars-container"></div>
-        </div>
-
-        <!-- Love Container -->
-        <div id="ui"></div>
+        <div id="ui" class="heart-wrapper" style="--heart-scale:0.75"></div>
     </div>
 
      <!-- Background audio element -->
@@ -437,6 +438,7 @@
                  this.orientationBlocked = false;
                  this.lastTime = performance.now();
                  this.frameCount = 0;
+                 this.userScale = 0.75; // explicit 75% shrink as requested
                  
                  this.init();
                  this.createGalaxyBackground();
@@ -445,8 +447,17 @@
 
                  // Orientation handling for mobile
                  this.updateOrientationBlock();
-                 window.addEventListener('resize', () => this.updateOrientationBlock());
-                 window.addEventListener('orientationchange', () => this.updateOrientationBlock());
+                 this.computeDeviceScale();
+                 this.updateScaleToStage();
+                 window.addEventListener('resize', () => { this.updateOrientationBlock(); this.updateScaleToStage(); });
+                 window.addEventListener('orientationchange', () => { this.updateOrientationBlock(); this.updateScaleToStage(); });
+
+                 // React immediately to any stage size change
+                 const stage = document.getElementById('stage');
+                 if (window.ResizeObserver && stage) {
+                     this._stageRO = new ResizeObserver(() => this.updateScaleToStage());
+                     this._stageRO.observe(stage);
+                 }
              }
 
                          init() {
@@ -501,6 +512,43 @@
                     const loveElement = this.createLoveElement(i);
                     this.container.appendChild(loveElement);
                     this.elements.push(loveElement);
+                }
+            }
+
+            updateScaleToStage() {
+                // Ensure love effect fits nicely within stage regardless of aspect
+                const stage = document.getElementById('stage');
+                const ui = this.container;
+                if (!stage || !ui) return;
+                const stageW = stage.clientWidth;
+                const stageH = stage.clientHeight;
+
+                // Base design reference ~ 900px total travel area (horizontal/vertical animations)
+                const base = 900;
+                // Leave small margin to avoid touching edges on iPhone safe areas
+                const safeFactor = 0.95;
+                const scaleBase = Math.min(stageW, stageH) / base * safeFactor;
+                const deviceFactor = this.deviceScale || 1;
+                const scale = scaleBase * deviceFactor * (this.userScale || 1);
+                ui.style.transform = `scale(${scale})`;
+            }
+
+            computeDeviceScale() {
+                // Extra downscale for tall phones (e.g., iPhone 11 portrait) so full heart fits
+                const ua = navigator.userAgent || '';
+                const isIphone = /iPhone/i.test(ua);
+                const dw = Math.min(window.screen.width, window.screen.height);
+                const dh = Math.max(window.screen.width, window.screen.height);
+                const isIphone11Like = isIphone && ((dw === 414 && dh === 896) || window.devicePixelRatio === 2);
+                const isPortrait = window.matchMedia('(orientation: portrait)').matches || (window.innerHeight > window.innerWidth);
+
+                // Defaults
+                this.deviceScale = 1;
+                if (this.isMobile) {
+                    this.deviceScale = 0.9; // slight shrink on mobile
+                }
+                if (isIphone11Like && isPortrait) {
+                    this.deviceScale = 0.8; // stronger shrink for iPhone 11 portrait
                 }
             }
 
@@ -609,6 +657,24 @@
                     this.loadTrack(next.key);
                     this.audio.play().catch(() => {});
                 });
+
+                // Play/Stop toggle
+                const toggleBtn = document.getElementById('music-toggle');
+                const updateToggleIcon = () => {
+                    toggleBtn.textContent = this.audio.paused ? '▶' : '⏸';
+                };
+                updateToggleIcon();
+                toggleBtn.addEventListener('click', () => {
+                    if (this.audio.paused) {
+                        this.audio.play().catch(() => {});
+                    } else {
+                        this.audio.pause();
+                    }
+                    setTimeout(updateToggleIcon, 0);
+                });
+
+                this.audio.addEventListener('play', updateToggleIcon);
+                this.audio.addEventListener('pause', updateToggleIcon);
             }
 
             loadTrack(key) {
@@ -626,28 +692,7 @@
                 });
             }
 
-            updateStats() {
-                const elementCount = document.getElementById('element-count');
-                const fps = document.getElementById('fps');
-                const memory = document.getElementById('memory');
-
-                elementCount.textContent = this.elements.length;
-
-                // Calculate FPS
-                const currentTime = performance.now();
-                const deltaTime = currentTime - this.lastTime;
-                this.lastTime = currentTime;
-                
-                this.frameCount++;
-                if (this.frameCount % 60 === 0) {
-                    const currentFps = Math.round(1000 / deltaTime);
-                    fps.textContent = currentFps;
-                }
-
-                // Estimate memory usage (rough calculation)
-                const estimatedMemory = (this.elements.length * 0.1).toFixed(1);
-                memory.textContent = estimatedMemory;
-            }
+            updateStats() { /* Stats UI removed per request */ }
 
             animate() {
                 this.updateStats();
