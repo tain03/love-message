@@ -20,14 +20,25 @@
              position: relative;
          }
 
-         /* Galaxy Background */
-         .galaxy-bg {
+         /* Stage keeps a fixed landscape aspect (letterboxed on phones) */
+         #stage {
              position: fixed;
-             top: 0;
-             left: 0;
+             top: 50%;
+             left: 50%;
+             transform: translate(-50%, -50%);
+             width: min(100vw, calc(100vh * (16 / 9)));
+             height: min(100vh, calc(100vw * (9 / 16)));
+             aspect-ratio: 16 / 9;
+             overflow: hidden;
+         }
+
+         /* Galaxy Background inside stage */
+         .galaxy-bg {
+             position: absolute;
+             inset: 0;
              width: 100%;
              height: 100%;
-             z-index: -1;
+             z-index: 0;
              pointer-events: none;
          }
 
@@ -111,11 +122,12 @@
              66% { transform: translateX(15px) translateY(5px) scale(0.95); }
          }
 
-        #ui {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
+         #ui {
+             position: relative;
+             width: 100%;
+             height: 100%;
+             z-index: 1;
+         }
 
         .love {
             position: absolute;
@@ -269,9 +281,9 @@
 
                  /* Stats */
          .stats {
-             position: fixed;
-             bottom: 20px;
-             right: 20px;
+             position: absolute;
+             bottom: 10px;
+             right: 10px;
              background: rgba(0, 0, 0, 0.7);
              padding: 10px;
              border-radius: 5px;
@@ -279,6 +291,7 @@
              font-size: 12px;
              backdrop-filter: blur(10px);
              border: 1px solid rgba(255, 255, 255, 0.1);
+             z-index: 2;
          }
 
         /* Minimal next-track button */
@@ -343,22 +356,31 @@
 
         /* Mobile tweaks */
         @media (max-width: 768px) {
-            #ui { transform: scale(0.9); transform-origin: 50% 50%; }
             .love_word {
                 font-size: clamp(12px, 3.2vw, 18px);
                 letter-spacing: 1px;
                 text-shadow: 0 0 6px rgba(255,255,255,0.7);
             }
+            .next-btn { top: 12px; right: 12px; padding: 10px 12px; }
+            .stats { font-size: 11px; padding: 6px 8px; }
+        }
+
+        /* Precise tuning for iPhone 11 portrait (414x896 @2x) */
+        @media screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) {
+            #stage {
+                /* Use a wider landscape aspect to maximize vertical space on 19.5:9 screen */
+                width: min(100vw, calc(100vh * (19.5 / 9)));
+                height: min(100vh, calc(100vw * (9 / 19.5)));
+                aspect-ratio: 19.5 / 9;
+            }
+            .love_word { font-size: clamp(13px, 3.8vw, 18px); }
             .next-btn {
-                top: calc(env(safe-area-inset-top, 0px) + 12px);
-                right: calc(env(safe-area-inset-right, 0px) + 12px);
-                padding: 10px 12px;
+                top: calc(env(safe-area-inset-top, 0px) + 10px);
+                right: calc(env(safe-area-inset-right, 0px) + 10px);
             }
             .stats {
                 bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
                 right: calc(env(safe-area-inset-right, 0px) + 8px);
-                font-size: 11px;
-                padding: 6px 8px;
             }
         }
     </style>
@@ -376,21 +398,23 @@
         </div>
     </div>
 
-    <!-- Stats -->
-    <div class="stats">
-        <div>Elements: <span id="element-count">0</span></div>
-        <div>FPS: <span id="fps">60</span></div>
-        <div>Memory: <span id="memory">0</span> MB</div>
+    <div id="stage">
+        <!-- Stats -->
+        <div class="stats">
+            <div>Elements: <span id="element-count">0</span></div>
+            <div>FPS: <span id="fps">60</span></div>
+            <div>Memory: <span id="memory">0</span> MB</div>
+        </div>
+
+        <!-- Galaxy Background -->
+        <div class="galaxy-bg">
+            <div class="nebula"></div>
+            <div class="stars" id="stars-container"></div>
+        </div>
+
+        <!-- Love Container -->
+        <div id="ui"></div>
     </div>
-
-         <!-- Galaxy Background -->
-     <div class="galaxy-bg">
-         <div class="nebula"></div>
-         <div class="stars" id="stars-container"></div>
-     </div>
-
-     <!-- Love Container -->
-     <div id="ui"></div>
 
      <!-- Background audio element -->
      <audio id="bg-audio" preload="auto" autoplay playsinline></audio>
