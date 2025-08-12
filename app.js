@@ -74,6 +74,12 @@ class LoveAnimation {
     const scaleBase = Math.min(stageW, stageH) / base * safe;
     const device = this.deviceScale || 1;
     ui.style.transform = `scale(${scaleBase * device * (this.userScale || 1)})`;
+    // Set --heart-scale based on device type
+    if (this.isMobile) {
+      ui.style.setProperty('--heart-scale', '0.75');
+    } else {
+      ui.style.setProperty('--heart-scale', '1.5');
+    }
   }
 
   computeDeviceScale() {

@@ -33,7 +33,7 @@
 
     <!-- Stage with fixed landscape area for heart effect only -->
     <div id="stage">
-        <div id="ui" class="heart-wrapper" style="--heart-scale:1.5"></div>
+    <div id="ui" class="heart-wrapper" style="--heart-scale:0.75"></div>
     </div>
 
     <!-- Background audio element -->
@@ -43,6 +43,21 @@
     <div id="sound-overlay">Nhấn để bật âm thanh ♪</div>
 
     <script src="app.js"></script>
+    <script>
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+        window.addEventListener('DOMContentLoaded', function() {
+            var ui = document.getElementById('ui');
+            if (ui) {
+                if (isMobile()) {
+                    ui.style.setProperty('--heart-scale', '0.75');
+                } else {
+                    ui.style.setProperty('--heart-scale', '1.5');
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>
