@@ -9,6 +9,12 @@
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❤️</text></svg>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="app.css">
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r158/three.min.js"></script>
+    <!-- Three.js Post-Processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r158/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r158/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r158/examples/js/postprocessing/UnrealBloomPass.js"></script>
 </head>
 
 <body>
@@ -25,11 +31,17 @@
         </div>
     </div>
 
+    <!-- Three.js Canvas -->
+    <canvas id="threejs-canvas"></canvas>
+
     <!-- Galaxy Background (full screen) -->
     <div class="galaxy-bg">
         <div class="nebula"></div>
         <div class="stars" id="stars-container"></div>
     </div>
+
+    <!-- Floating Particles -->
+    <div class="floating-particles" id="floating-particles"></div>
 
     <!-- Stage with fixed landscape area for heart effect only -->
     <div id="stage">
@@ -43,10 +55,28 @@
     <div id="sound-overlay">Nhấn để bật âm thanh ♪</div>
 
     <script src="app.js"></script>
+    <script src="threejs-effects.js"></script>
     <script>
         function isMobile() {
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
+        
+        // Floating particles effect
+        function createFloatingParticles() {
+            const container = document.getElementById('floating-particles');
+            const particleCount = isMobile() ? 15 : 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'floating-particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                container.appendChild(particle);
+            }
+        }
+        
         window.addEventListener('DOMContentLoaded', function() {
             var ui = document.getElementById('ui');
             if (ui) {
@@ -56,6 +86,9 @@
                     ui.style.setProperty('--heart-scale', '1.5');
                 }
             }
+            
+            // Initialize floating particles
+            createFloatingParticles();
         });
     </script>
 </body>
