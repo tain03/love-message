@@ -10,7 +10,7 @@ class LoveAnimation {
     this.orientationBlocked = false;
     this.lastTime = performance.now();
     this.frameCount = 0;
-    this.userScale = 1;
+    this.userScale = 0.75;
 
     this.init();
     this.createGalaxyBackground();
@@ -74,12 +74,6 @@ class LoveAnimation {
     const scaleBase = Math.min(stageW, stageH) / base * safe;
     const device = this.deviceScale || 1;
     ui.style.transform = `scale(${scaleBase * device * (this.userScale || 1)})`;
-    // Set --heart-scale based on device type
-    if (this.isMobile) {
-      ui.style.setProperty('--heart-scale', '0.75');
-    } else {
-      ui.style.setProperty('--heart-scale', '1.5');
-    }
   }
 
   computeDeviceScale() {
@@ -108,7 +102,7 @@ class LoveAnimation {
 
   getRandomLoveText() {
     const t = [
-      'Te amo',         // Spanish
+      'I Love You',         // English
       'Ti amo',         // Italian
       'Te quiero',      // Spanish
       'Je t\'aime',     // French (9)
