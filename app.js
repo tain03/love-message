@@ -10,7 +10,7 @@ class LoveAnimation {
     this.orientationBlocked = false;
     this.lastTime = performance.now();
     this.frameCount = 0;
-    this.userScale = 0.75;
+    this.userScale = 1;
 
     this.init();
     this.createGalaxyBackground();
@@ -92,16 +92,47 @@ class LoveAnimation {
     const love = document.createElement('div'); love.className = 'love'; love.style.setProperty('--index', index);
     const horizontal = document.createElement('div'); horizontal.className = 'love_horizontal';
     const vertical = document.createElement('div'); vertical.className = 'love_vertical';
-    const word = document.createElement('div'); word.className = 'love_word'; word.textContent = this.getRandomLoveText();
-    if (index === this.count - 1) word.classList.add('special');
+    const word = document.createElement('div'); word.className = 'love_word';
+    // Normalize every text to the same display length smaller than 'I Love You'
+    word.textContent = this.formatTextToUniformLength(this.getRandomLoveText(), 9);
     const delay = -(index * 300); horizontal.style.animationDelay = `${delay}ms`; vertical.style.animationDelay = `${delay}ms`;
     horizontal.style.animationDuration = `${10000 / this.speed}ms`; vertical.style.animationDuration = `${20000 / this.speed}ms`;
     love.appendChild(horizontal); horizontal.appendChild(vertical); vertical.appendChild(word); return love;
   }
 
   getRandomLoveText() {
-    const t = ['I Love You','Je t\'aime','Te amo','Ich liebe dich','Ti amo','Te quiero','愛してる','사랑해','我爱你','أحبك','iu cún','❤️','💕','💖','💝'];
+    const t = [
+      'Te amo',         // Spanish
+      'Ti amo',         // Italian
+      'Te quiero',      // Spanish
+      'Je t\'aime',     // French (9)
+      '愛してる',        // Japanese
+      '사랑해',          // Korean
+      '我爱你',          // Chinese (Simplified)
+      '我愛你',          // Chinese (Traditional)
+      'أحبك',           // Arabic
+      'iu cún',         // Vietnamese
+      'รักเธอ',         // Thai
+      'Amo você',       // Portuguese (8)
+      'Seviyorum',      // Turkish (9)
+      'Σ\'αγαπώ',      // Greek
+      'אוהב אותך',      // Hebrew (9)
+      'Të dua',         // Albanian
+      'Volim te',       // Croatian/Serbian
+      'Te iubesc',      // Romanian (9)
+      'Szeretlek',      // Hungarian (9)
+      'Nakupenda'       // Swahili (9)
+    ];
     return t[Math.floor(Math.random()*t.length)];
+  }
+
+  // Ensure all texts share the same length for display
+  // Cuts longer texts, pads shorter ones with non‑breaking spaces to keep width
+  formatTextToUniformLength(text, targetLength = 9) {
+    const codepoints = Array.from((text || '').normalize('NFC'));
+    const truncated = codepoints.slice(0, Math.max(0, targetLength));
+    while (truncated.length < targetLength) truncated.push('\u00A0');
+    return truncated.join('');
   }
 
   setupControls() { /* removed */ }
